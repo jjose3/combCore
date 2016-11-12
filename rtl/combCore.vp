@@ -12,7 +12,7 @@ output logic [`$bW-1`:0] memWrData ,
 output logic [`$bW-1`:0] memWrAddr,
 output logic memWrEn ,
 output logic [`$bW-1`:0] dst0,
-output locic [`$bW-1`:0] pcNxt
+output logic [`$bW-1`:0] pcNxt
 );
 
 logic [5:0] op; //opcode 
@@ -30,10 +30,11 @@ logic [25:0] offs; //offset for j-type
 logic [`$bW-1`:0] pcplus4;
 logic [`$bW-1`:0] pcplusimm;
 logic [`$bW-1`:0] jmpaddr;
+logic [`$bW-1`:0] alu_o, alu_a, alu_b;
 
 logic [3:0] aluctl;  
 logic [1:0] aluop;  
-logic bne, bgtz, beq, zero, gtz, branch, jmp, jmpreg, aluSrc, aluimm, memtoreg, regdst; 
+logic bne, bgtz, beq, zero, gtz, branch, jmp, jmpreg, alusrc, aluimm, memtoreg, regdst; 
 
 assign op = instr[31:26];
 assign rs = instr[25:21];
@@ -42,12 +43,12 @@ assign rd = instr[15:11];
 assign shmt = instr[10:6];
 assign fn = instr[5:0];
 assign imm = instr[15:0];
-assign simm = {16{instr[15]}, instr[15:0]};
+assign simm = {{16{instr[15]}}, instr[15:0]};
 assign offs = instr[25:0];
 
 assign pcplus4 = pc + `$bW`'d4;
-assign pcplusimm = pcplus4 + {simm[`$bW-3`:2], 2'b0};
-assign jmpaddr = {pcplus4[31:28] +  {offs[25:0], 2'b0}};
+assign pcplusimm = pcplus4 + {simm[`$bW-3`:0], 2'b0};
+assign jmpaddr = {pcplus4[31:28], offs[25:0], 2'b0};
 
 assign branch = (bgtz && gtz) || (bne && ~zero) || (beq && zero);
 
@@ -73,7 +74,7 @@ assign dst0 = memtoreg ? memRdData : alu_o;
 // Instantiations
 
 //;  my $ctl = generate_base( "ctl" , "CPU_CTL");
-`$ctl->instantiate()`(.op(op), .func(fn), .mfunc(mfn), .beq(beq), .bne(bne), .aluop(aluop), .aluimm(aluimm), .memrden(memRdEn), .memwren(memWrEn), .memtoreg(memtoreg), .regdst(regdst), .regwren(regWrEn), alusrc(alusrc), jmpreg(jmpreg), .jmp(jmp));
+`$ctl->instantiate()`(.op(op), .func(fn), .mfunc(mfn), .beq(beq), .bne(bne), .bgtz(bgtz), .aluop(aluop), .aluimm(aluimm), .memrden(memRdEn), .memwren(memWrEn), .memtoreg(memtoreg), .regdst(regdst), .regwren(regWrEn), .alusrc(alusrc), .jmpreg(jmpreg), .jmp(jmp));
 
 //; my $aluctl = generate_base("aluctl", "ALU_CTL");
 `$aluctl->instantiate()`(.func(muxfunc), .aluop(aluop), .aluctl(aluctl));
